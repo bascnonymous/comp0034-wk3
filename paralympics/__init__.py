@@ -5,6 +5,7 @@ from pathlib import Path
 from flask import Flask
 from flask_sqlalchemy import SQLAlchemy
 from sqlalchemy.orm import DeclarativeBase
+from flask_marshmallow import Marshmallow
 
 
 # https://flask-sqlalchemy.palletsprojects.com/en/3.1.x/quickstart/
@@ -15,6 +16,8 @@ class Base(DeclarativeBase):
 # First create the db object using the SQLAlchemy constructor.
 # Pass a subclass of either DeclarativeBase or DeclarativeBaseNoMeta to the constructor.
 db = SQLAlchemy(model_class=Base)
+# Create a global Flask-Marshmallow object
+ma = Marshmallow()
 
 
 def create_app(test_config=None):
@@ -23,14 +26,15 @@ def create_app(test_config=None):
 
     app.config.from_mapping(
         # Generate your own SECRET_KEY using python secrets
-        SECRET_KEY='l-tirPCf1S44mWAGoWqWlA',
+        SECRET_KEY="l-tirPCf1S44mWAGoWqWlA",
         # configure the SQLite database, relative to the app instance folder
-        SQLALCHEMY_DATABASE_URI="sqlite:///" + os.path.join(app.instance_path, 'paralympics.sqlite'),
+        SQLALCHEMY_DATABASE_URI="sqlite:///"
+        + os.path.join(app.instance_path, "paralympics.sqlite"),
     )
 
     if test_config is None:
         # load the instance config, if it exists, when not testing
-        app.config.from_pyfile('config.py', silent=True)
+        app.config.from_pyfile("config.py", silent=True)
     else:
         # load the test config if passed in
         app.config.from_mapping(test_config)
@@ -43,10 +47,13 @@ def create_app(test_config=None):
 
     # Initialise Flask with the SQLAlchemy database extension
     db.init_app(app)
+    # Initialise Flask-Marshmallow
+    ma.init_app(app)
 
     # Models are defined in the models module, so you must import them before calling create_all, otherwise SQLAlchemy
     # will not know about them.
     from paralympics.models import User, Region, Event
+
     # Create the tables in the database
     # create_all does not update tables if they are already in the database.
     with app.app_context():
@@ -69,7 +76,7 @@ def add_data_from_csv():
     if not first_region:
         print("Start adding region data to the database")
         noc_file = Path(__file__).parent.parent.joinpath("data", "noc_regions.csv")
-        with open(noc_file, 'r') as file:
+        with open(noc_file, "r") as file:
             csv_reader = csv.reader(file)
             next(csv_reader)  # Skip header row
             for row in csv_reader:
@@ -82,28 +89,32 @@ def add_data_from_csv():
     first_event = db.session.execute(db.select(Event)).first()
     if not first_event:
         print("Start adding event data to the database")
-        event_file = Path(__file__).parent.parent.joinpath("data", "paralympic_events.csv")
-        with open(event_file, 'r') as file:
+        event_file = Path(__file__).parent.parent.joinpath(
+            "data", "paralympic_events.csv"
+        )
+        with open(event_file, "r") as file:
             csv_reader = csv.reader(file)
             next(csv_reader)  # Skip header row
             for row in csv_reader:
                 # row[0] is the first column, row[1] is the second column etc
-                e = Event(type=row[0],
-                          year=row[1],
-                          country=row[2],
-                          host=row[3],
-                          NOC=row[4],
-                          start=row[5],
-                          end=row[6],
-                          duration=row[7] or None,
-                          disabilities_included=row[8],
-                          countries=row[9] or None,
-                          events=row[10] or None,
-                          sports=row[11] or None,
-                          participants_m=row[12] or None,
-                          participants_f=row[13] or None,
-                          participants=row[14] or None,
-                          highlights=row[15])
+                e = Event(
+                    type=row[0],
+                    year=row[1],
+                    country=row[2],
+                    host=row[3],
+                    NOC=row[4],
+                    start=row[5],
+                    end=row[6],
+                    duration=row[7] or None,
+                    disabilities_included=row[8],
+                    countries=row[9] or None,
+                    events=row[10] or None,
+                    sports=row[11] or None,
+                    participants_m=row[12] or None,
+                    participants_f=row[13] or None,
+                    participants=row[14] or None,
+                    highlights=row[15],
+                )
                 db.session.add(e)
             db.session.commit()
 
